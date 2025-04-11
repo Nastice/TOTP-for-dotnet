@@ -4,10 +4,11 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>Nastice.GoogleAuthtenticateLab</RootNamespace>
+        <RootNamespace>Nastice.GoogleAuthenticateLab</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
@@ -18,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\" />
+      <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Shared\Nastice.GoogleAuthenticateLab.Shared.csproj" />
     </ItemGroup>
 
 </Project>
