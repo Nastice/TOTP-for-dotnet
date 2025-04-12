@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Data\Nastice.GoogleAuthenticateLab.Data.csproj" />
       <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Services\Nastice.GoogleAuthenticateLab.Services.csproj" />
       <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Shared\Nastice.GoogleAuthenticateLab.Shared.csproj" />
     </ItemGroup>

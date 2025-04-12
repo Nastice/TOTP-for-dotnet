@@ -7,4 +7,9 @@
         <RootNamespace>Nastice.GoogleAuthenticateLab.Services</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Data\Nastice.GoogleAuthenticateLab.Data.csproj" />
+      <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Shared\Nastice.GoogleAuthenticateLab.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

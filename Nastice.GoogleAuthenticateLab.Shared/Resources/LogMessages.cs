@@ -2,6 +2,16 @@
 
 public static class LogMessages
 {
+    public static class Services
+    {
+        public static class BaseService
+        {
+            public const string CreateAffectRows = "Create entity {Entity} affected {AffectRows} rows";
+            public const string UpdateAffectRows = "Update entity {Entity} affected {AffectRows} rows";
+            public const string AffectedNoRows = "Save {Entity} affected no rows.";
+        }
+    }
+
     public static class Shared
     {
         public static class Filters

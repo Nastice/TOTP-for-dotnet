@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 
 namespace Nastice.GoogleAuthenticateLab.Controllers;
@@ -7,6 +8,15 @@ namespace Nastice.GoogleAuthenticateLab.Controllers;
 [ApiController]
 public class LoginController : ControllerBase
 {
+    private readonly ILogger<LoginController> _logger;
+    private readonly IAuthService _authService;
+
+    public LoginController(ILogger<LoginController> logger, IAuthService authService)
+    {
+        _logger = logger;
+        _authService = authService;
+    }
+
     /// <summary>
     /// 一般登入
     /// </summary>

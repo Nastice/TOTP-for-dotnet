@@ -3,6 +3,13 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Nastice.GoogleAuthenticateLab.Data.Interfaces;
+using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DAOs;
+using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
+using Nastice.GoogleAuthenticateLab.Data.Repositories;
+using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Services.Services;
 using Nastice.GoogleAuthenticateLab.Shared.Extensions;
 using Nastice.GoogleAuthenticateLab.Shared.Filters;
@@ -28,7 +35,6 @@ try
 
     #endregion
 
-
     #region Register Controllers
 
     // Add services to the container.
@@ -50,7 +56,33 @@ try
 
     #region Register Services
 
-    builder.Services.AddProxiedScoped<LoginService>();
+    builder.Services.AddProxiedScoped<IAuthService, AuthService>();
+
+    #endregion
+
+    #region Register Repositories
+
+    builder.Services.AddProxiedScoped<IRepositoryBase<User>, UserRepository>();
+
+    #endregion
+
+    #region Db Context
+
+    builder.Services.AddDbContext<DbContext, MssqlContext>(options => {
+        var connectionString = builder.Configuration.GetConnectionString("SqlServer");
+
+        options.UseSqlServer(connectionString,
+                             msSqlOptions => {
+                                 var assembly = typeof(MssqlContext).Assembly;
+                                 var assemblyName = assembly.GetName().Name;
+
+                                 msSqlOptions.MigrationsAssembly(assemblyName);
+                             }
+        );
+
+        options.EnableSensitiveDataLogging();
+        options.ConfigureWarnings(x => x.Ignore(RelationalEventId.AmbientTransactionWarning));
+    });
 
     #endregion
 
