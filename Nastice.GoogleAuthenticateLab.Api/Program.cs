@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Nastice.GoogleAuthenticateLab.Services.Services;
+using Nastice.GoogleAuthenticateLab.Shared.Extensions;
+using Nastice.GoogleAuthenticateLab.Shared.Filters;
 using Nastice.GoogleAuthenticateLab.Shared.ValidationManagers;
 using Nastice.GoogleAuthenticateLab.Shared.Validations;
 using Scalar.AspNetCore;
@@ -19,19 +22,35 @@ try
 {
     Log.Information("Initializing and starting web host");
 
+    #region Initialize SeriLog
+
+    builder.Services.AddSerilog();
+
+    #endregion
+
+
     #region Register Controllers
 
     // Add services to the container.
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
-    builder.Services.AddControllers()
+    builder.Services
+           .AddControllers(options => {
+               options.Filters.Add<TraceLogFilter>();
+           })
            .AddJsonOptions(options => {
                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                options.JsonSerializerOptions.MaxDepth = 5;
                options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.CjkUnifiedIdeographs);
                options.JsonSerializerOptions.WriteIndented = true;
            });
+
+    #endregion
+
+    #region Register Services
+
+    builder.Services.AddProxiedScoped<LoginService>();
 
     #endregion
 

@@ -1,10 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Nastice.GoogleAuthenticateLab.Shared.Helpers;
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Extensions;
 
 public static class ObjectExtensions
 {
+    private static readonly ConcurrentDictionary<JavaScriptEncoder, JsonSerializerOptions> OptionsCache = new();
     public static string GetDisplayName(this object obj)
     {
         var result = obj.getAttribute<DisplayAttribute>();
@@ -23,5 +29,19 @@ public static class ObjectExtensions
         var result = obj.GetType().GetCustomAttribute<TAttribute>(true);
 
         return result;
+    }
+
+    public static string ToJson(this object obj, JavaScriptEncoder? encoder = null)
+    {
+        var encoderToUse = encoder ?? JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        var options = OptionsCache.GetOrAdd(encoderToUse, enc => new JsonSerializerOptions
+        {
+            Encoder = enc,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            Converters = { new SystemTypeConverter() }
+        });
+
+        return JsonSerializer.Serialize(obj, options);
     }
 }

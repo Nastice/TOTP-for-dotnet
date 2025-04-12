@@ -4,7 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Nastice.GoogleAuthtenticateLab.Data</RootNamespace>
+        <RootNamespace>Nastice.GoogleAuthenticateLab.Data</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
