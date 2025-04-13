@@ -32,8 +32,14 @@ public partial class MssqlContext : DbContext
                 .IsUnicode(false)
                 .HasComment("帳號")
                 .HasColumnName("account");
+            entity.Property(e => e.BackupCodes)
+                .HasMaxLength(1024)
+                .IsUnicode(false)
+                .HasComment("備份碼")
+                .HasColumnName("backup_codes");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")
+                .HasComment("建立時間")
                 .HasColumnName("created_at");
             entity.Property(e => e.Email)
                 .HasMaxLength(320)
@@ -43,6 +49,9 @@ public partial class MssqlContext : DbContext
                 .HasDefaultValue(true)
                 .HasComment("是否啟用")
                 .HasColumnName("enable");
+            entity.Property(e => e.LastLogonAt)
+                .HasComment("最後一次登入時間")
+                .HasColumnName("last_logon_at");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
@@ -51,6 +60,11 @@ public partial class MssqlContext : DbContext
                 .IsUnicode(false)
                 .HasComment("密碼")
                 .HasColumnName("password");
+            entity.Property(e => e.Secret)
+                .HasMaxLength(64)
+                .IsUnicode(false)
+                .HasComment("密鑰")
+                .HasColumnName("secret");
         });
 
         OnModelCreatingPartial(modelBuilder);

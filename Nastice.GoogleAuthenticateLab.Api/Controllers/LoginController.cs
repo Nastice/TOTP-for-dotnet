@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Extensions;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
+using Nastice.GoogleAuthenticateLab.Shared.Enums;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
+using Nastice.GoogleAuthenticateLab.Shared.Resources;
 
 namespace Nastice.GoogleAuthenticateLab.Controllers;
 
@@ -25,8 +28,36 @@ public class LoginController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        await Task.CompletedTask;
+        var user = await _authService.GetUserByAccountAsync(request.Account!);
+        if (user == null)
+        {
+            _logger.LogError(
+                LogMessages.Api.Controllers.LoginController.UserNotFound,
+                request.Account
+            );
+            var problemDetail = createUnauthorizedProblemDetails(LoginResultCode.InvalidAccountOrPassword.GetDisplayName());
+            return Unauthorized(problemDetail);
+        }
+
+        var isAuthorize = _authService.LoginAsync(user, request.Password!, request.Otp!);
+        if (isAuthorize is not LoginResultCode.Success)
+        {
+            _logger.LogError(
+                LogMessages.Api.Controllers.LoginController.Unauthorized,
+                request.Account,
+                isAuthorize.ToString()
+            );
+            var problemDetail = createUnauthorizedProblemDetails(isAuthorize.GetDisplayName());
+            return Unauthorized(problemDetail);
+        }
 
         return Ok();
+    }
+
+    private ProblemDetails createUnauthorizedProblemDetails(string title)
+    {
+        var problemDetails = ProblemDetailsFactory.CreateProblemDetails(HttpContext, StatusCodes.Status401Unauthorized, title);
+
+        return problemDetails;
     }
 }

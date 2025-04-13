@@ -43,6 +43,7 @@ try
 
     builder.Services
            .AddControllers(options => {
+               options.Filters.Add<ExceptionFilter>();
                options.Filters.Add<TraceLogFilter>();
            })
            .AddJsonOptions(options => {

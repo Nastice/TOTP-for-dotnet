@@ -43,7 +43,12 @@ public class TraceLogFilter : IActionFilter, IAsyncActionFilter
 
             var uri = context.HttpContext.Request.Path.Value;
 
-            logger.LogTrace(LogMessages.Shared.Filters.TraceStart, uri, controllerName, methodName, context.ActionArguments.ToJson());
+            logger.LogTrace(LogMessages.Shared.Filters.TraceLogFilter.RouteEntered,
+                uri,
+                controllerName,
+                methodName,
+                context.ActionArguments.ToJson()
+            );
         }
 
         /// <summary>
@@ -65,7 +70,12 @@ public class TraceLogFilter : IActionFilter, IAsyncActionFilter
                 result = objectResult.Value?.ToJson() ?? string.Empty;
             }
 
-            logger.LogTrace(LogMessages.Shared.Filters.TraceEnd, uri, controllerName, methodName, result);
+            logger.LogTrace(LogMessages.Shared.Filters.TraceLogFilter.RouteExited,
+                uri,
+                controllerName,
+                methodName,
+                result
+            );
         }
 
         /// <summary>

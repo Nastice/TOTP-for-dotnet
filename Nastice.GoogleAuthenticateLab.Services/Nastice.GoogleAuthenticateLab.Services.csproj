@@ -12,4 +12,9 @@
       <ProjectReference Include="..\Nastice.GoogleAuthenticateLab.Shared\Nastice.GoogleAuthenticateLab.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
+      <PackageReference Include="Otp.NET" Version="1.4.0" />
+    </ItemGroup>
+
 </Project>

@@ -15,5 +15,11 @@ namespace Nastice.GoogleAuthenticateLab.Shared.Models.Requests
         /// </summary>
         [Display(Name = "密碼")]
         public string? Password { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        [Display(Name = "授權碼")]
+        public string? Otp { get; set; }
     }
 }

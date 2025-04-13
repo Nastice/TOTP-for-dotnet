@@ -31,5 +31,23 @@ public partial class User
     /// </summary>
     public bool Enable { get; set; }
 
+    /// <summary>
+    /// 密鑰
+    /// </summary>
+    public string? Secret { get; set; }
+
+    /// <summary>
+    /// 備份碼
+    /// </summary>
+    public string? BackupCodes { get; set; }
+
+    /// <summary>
+    /// 最後一次登入時間
+    /// </summary>
+    public DateTime? LastLogonAt { get; set; }
+
+    /// <summary>
+    /// 建立時間
+    /// </summary>
     public DateTime CreatedAt { get; set; }
 }
