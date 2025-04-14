@@ -2,7 +2,7 @@
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 
-public class RegisterRequest
+public record RegisterRequest
 {
     [Display(Name = "帳號")]
     public string? Account { get; set; }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Extensions;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
+using Nastice.GoogleAuthenticateLab.Shared.Extensions;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 using Nastice.GoogleAuthenticateLab.Shared.Resources;
 
@@ -35,7 +35,10 @@ public class LoginController : ControllerBase
                 LogMessages.Api.Controllers.LoginController.UserNotFound,
                 request.Account
             );
-            var problemDetail = createUnauthorizedProblemDetails(LoginResultCode.InvalidAccountOrPassword.GetDisplayName());
+
+            var problemDetail = createUnauthorizedProblemDetails(
+                LoginResultCode.InvalidAccountOrPassword.GetDisplayName()
+            );
             return Unauthorized(problemDetail);
         }
 
@@ -47,16 +50,32 @@ public class LoginController : ControllerBase
                 request.Account,
                 isAuthorize.ToString()
             );
-            var problemDetail = createUnauthorizedProblemDetails(isAuthorize.GetDisplayName());
+
+            var problemDetail = createUnauthorizedProblemDetails(
+                isAuthorize.GetDisplayName(),
+                isAuthorize
+            );
+
             return Unauthorized(problemDetail);
         }
 
-        return Ok();
+        var loginResponse = _authService.CreateToken(user);
+
+        return Ok(loginResponse);
     }
 
-    private ProblemDetails createUnauthorizedProblemDetails(string title)
+    private ProblemDetails createUnauthorizedProblemDetails(
+        string title,
+        LoginResultCode code = LoginResultCode.InvalidAccountOrPassword
+    )
     {
-        var problemDetails = ProblemDetailsFactory.CreateProblemDetails(HttpContext, StatusCodes.Status401Unauthorized, title);
+        var problemDetails = ProblemDetailsFactory.CreateProblemDetails(
+            HttpContext,
+            StatusCodes.Status401Unauthorized,
+            title
+        );
+
+        problemDetails.Extensions.Add("errorCode", code.ToString());
 
         return problemDetails;
     }

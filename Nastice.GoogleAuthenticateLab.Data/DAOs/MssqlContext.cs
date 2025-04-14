@@ -56,7 +56,7 @@ public partial class MssqlContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("name");
             entity.Property(e => e.Password)
-                .HasMaxLength(50)
+                .HasMaxLength(128)
                 .IsUnicode(false)
                 .HasComment("密碼")
                 .HasColumnName("password");

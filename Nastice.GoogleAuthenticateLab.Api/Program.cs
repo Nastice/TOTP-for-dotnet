@@ -1,18 +1,25 @@
+using System.Configuration;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DAOs;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
 using Nastice.GoogleAuthenticateLab.Data.Repositories;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
+using Nastice.GoogleAuthenticateLab.Services.Libraries;
 using Nastice.GoogleAuthenticateLab.Services.Services;
 using Nastice.GoogleAuthenticateLab.Shared.Extensions;
 using Nastice.GoogleAuthenticateLab.Shared.Filters;
+using Nastice.GoogleAuthenticateLab.Shared.Models.Options;
 using Nastice.GoogleAuthenticateLab.Shared.ValidationManagers;
 using Nastice.GoogleAuthenticateLab.Shared.Validations;
 using Scalar.AspNetCore;
@@ -21,7 +28,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 var logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration)
-                                      .Destructure.ToMaximumDepth(2);
+    .Destructure.ToMaximumDepth(2);
 
 Log.Logger = logger.CreateLogger();
 
@@ -35,23 +42,63 @@ try
 
     #endregion
 
+    #region Register Configuration
+
+    var jwtOptionsSection = builder.Configuration.GetSection("JwtOptions");
+
+    builder.Services.Configure<JwtOptions>(jwtOptionsSection);
+
+    #endregion
+
+    #region Register Authorize & Authenticate
+
+    builder.Services.AddAuthorization();
+
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options => {
+            var jwtOptions = jwtOptionsSection.Get<JwtOptions>();
+            if (string.IsNullOrEmpty(jwtOptions?.Secret))
+            {
+                throw new ConfigurationErrorsException("Jwt Secret 尚未設定，請先設定 JwtOptions");
+            }
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret));
+
+            options.TokenValidationParameters = new()
+            {
+                ValidateIssuer = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtOptions.Issuer,
+                IssuerSigningKeys = [key]
+            };
+        });
+
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("default",
+            policy => {
+                policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
+            });
+
+    #endregion
+
     #region Register Controllers
 
     // Add services to the container.
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
-    builder.Services
-           .AddControllers(options => {
-               options.Filters.Add<ExceptionFilter>();
-               options.Filters.Add<TraceLogFilter>();
-           })
-           .AddJsonOptions(options => {
-               options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-               options.JsonSerializerOptions.MaxDepth = 5;
-               options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.CjkUnifiedIdeographs);
-               options.JsonSerializerOptions.WriteIndented = true;
-           });
+    builder.Services.AddControllers(options => {
+            options.Filters.Add<ExceptionFilter>();
+            options.Filters.Add<TraceLogFilter>();
+        })
+        .AddJsonOptions(options => {
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.MaxDepth = 5;
+            options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.CjkUnifiedIdeographs);
+            options.JsonSerializerOptions.WriteIndented = true;
+        });
 
     #endregion
 
@@ -61,25 +108,31 @@ try
 
     #endregion
 
+    #region Register Libraries
+
+    builder.Services.AddProxiedScoped<JwtTokenLibrary>();
+
+    #endregion
+
     #region Register Repositories
 
     builder.Services.AddProxiedScoped<IRepositoryBase<User>, UserRepository>();
 
     #endregion
 
-    #region Db Context
+    #region Register Db Context
 
     builder.Services.AddDbContext<DbContext, MssqlContext>(options => {
         var connectionString = builder.Configuration.GetConnectionString("SqlServer");
 
         options.UseSqlServer(connectionString,
-                             msSqlOptions => {
-                                 var assembly = typeof(MssqlContext).Assembly;
-                                 var assemblyName = assembly.GetName().Name;
+            msSqlOptions => {
+                var assembly = typeof(MssqlContext).Assembly;
+                var assemblyName = assembly.GetName()
+                    .Name;
 
-                                 msSqlOptions.MigrationsAssembly(assemblyName);
-                             }
-        );
+                msSqlOptions.MigrationsAssembly(assemblyName);
+            });
 
         options.EnableSensitiveDataLogging();
         options.ConfigureWarnings(x => x.Ignore(RelationalEventId.AmbientTransactionWarning));
@@ -87,7 +140,7 @@ try
 
     #endregion
 
-    #region Fluent Validations
+    #region Register Fluent Validations
 
     ValidatorOptions.Global.LanguageManager = new ZhLanguageManager();
 
@@ -95,6 +148,8 @@ try
     builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidation>(ServiceLifetime.Transient);
 
     #endregion
+
+    #region Build Web Application and Start
 
     var app = builder.Build();
 
@@ -105,9 +160,20 @@ try
         app.MapScalarApiReference();
     }
 
+    app.UseForwardedHeaders(new()
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+
+    app.UseHttpsRedirection();
+
+    app.UseAuthorization();
+
     app.MapControllers();
 
     await app.RunAsync();
+
+    #endregion
     return 0;
 }
 catch (Exception e)

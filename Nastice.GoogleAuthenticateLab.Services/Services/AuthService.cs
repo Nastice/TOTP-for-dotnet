@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
+using Nastice.GoogleAuthenticateLab.Services.Libraries;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
 using Nastice.GoogleAuthenticateLab.Shared.Exceptions;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
@@ -14,11 +16,13 @@ public class AuthService : IAuthService
 {
     private readonly IRepositoryBase<User> _userRepository;
     private readonly ILogger<AuthService> _logger;
+    private readonly JwtTokenLibrary _jwtTokenLibrary;
 
-    public AuthService(IRepositoryBase<User> userRepository, ILogger<AuthService> logger)
+    public AuthService(IRepositoryBase<User> userRepository, ILogger<AuthService> logger, JwtTokenLibrary jwtTokenLibrary)
     {
         _userRepository = userRepository;
         _logger = logger;
+        _jwtTokenLibrary = jwtTokenLibrary;
     }
 
     public async Task<User?> GetUserByAccountAsync(string account)
@@ -65,7 +69,15 @@ public class AuthService : IAuthService
 
     public LoginResponse CreateToken(User user)
     {
-        return new();
+        var claims = new List<Claim>
+        {
+            new (ClaimTypes.Name, user.Account),
+            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new (ClaimTypes.Email, user.Email),
+            new ("IssuedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")),
+        };
+
+        return _jwtTokenLibrary.CreateLoginResponse(claims);
     }
 
     public async Task<User?> RegisterAsync(RegisterRequest request)
@@ -73,7 +85,7 @@ public class AuthService : IAuthService
         var user = new User
         {
             Account = request.Account!,
-            Password = request.Password!,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password!),
             Name = request.Name!,
             Email = request.Email!,
             Enable = true,
