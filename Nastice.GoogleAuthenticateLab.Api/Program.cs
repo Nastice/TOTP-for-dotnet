@@ -58,18 +58,13 @@ try
                 var allowOriginSection = builder.Configuration.GetSection("CorsPolicy:AllowOrigins");
                 var allowMethodsSection = builder.Configuration.GetSection("CorsPolicy:AllowMethods");
                 var allowOrigin = allowOriginSection.Get<string[]>() ?? [];
-                foreach (var origins in allowOrigin)
-                {
-                    policy.WithOrigins(origins);
-                }
+                policy.WithOrigins(allowOrigin);
 
                 var allowMethod = allowMethodsSection.Get<string[]>() ?? [];
-                foreach (var methods in allowMethod)
-                {
-                    policy.WithMethods(methods);
-                }
+                policy.WithMethods(allowMethod);
 
                 policy.AllowAnyHeader();
+                policy.AllowCredentials();
             });
     });
 

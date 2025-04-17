@@ -61,6 +61,26 @@ public class LoginController : ControllerBase
 
         var loginResponse = _authService.CreateToken(user);
 
+        var jwtOptions = new CookieOptions
+        {
+            Expires = DateTime.Now.AddHours(1),
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            HttpOnly = true
+        };
+
+        Response.Cookies.Append("access_token", loginResponse.AccessToken!, jwtOptions);
+
+        var csrfOptions = new CookieOptions
+        {
+            Expires = DateTimeOffset.Now.AddHours(1),
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            HttpOnly = false
+        };
+
+        Response.Cookies.Append("csrf_token", Guid.NewGuid().ToString(), csrfOptions);
+
         return Ok(loginResponse);
     }
 
