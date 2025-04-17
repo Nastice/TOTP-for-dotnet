@@ -50,6 +50,31 @@ try
 
     #endregion
 
+    #region Register Cors
+
+    builder.Services.AddCors(options => {
+        options.AddPolicy("DefaultCorsPolicy",
+            policy => {
+                var allowOriginSection = builder.Configuration.GetSection("CorsPolicy:AllowOrigins");
+                var allowMethodsSection = builder.Configuration.GetSection("CorsPolicy:AllowMethods");
+                var allowOrigin = allowOriginSection.Get<string[]>() ?? [];
+                foreach (var origins in allowOrigin)
+                {
+                    policy.WithOrigins(origins);
+                }
+
+                var allowMethod = allowMethodsSection.Get<string[]>() ?? [];
+                foreach (var methods in allowMethod)
+                {
+                    policy.WithMethods(methods);
+                }
+
+                policy.AllowAnyHeader();
+            });
+    });
+
+    #endregion
+
     #region Register Authorize & Authenticate
 
     builder.Services.AddAuthorization();
@@ -170,6 +195,8 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+
+    app.UseCors("DefaultCorsPolicy");
 
     await app.RunAsync();
 
