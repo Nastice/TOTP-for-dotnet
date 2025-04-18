@@ -21,7 +21,7 @@ public interface IAuthService
     /// <param name="password"></param>
     /// <param name="otp"></param>
     /// <returns></returns>
-    public LoginResultCode LoginAsync(User user, string password, string? otp);
+    public LoginResultCode TryLogin(User user, string password, string? otp);
 
     /// <summary>
     /// 生成登入回應

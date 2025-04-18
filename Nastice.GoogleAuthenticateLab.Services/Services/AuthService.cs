@@ -31,7 +31,7 @@ public class AuthService : IAuthService
         return user;
     }
 
-    public LoginResultCode LoginAsync(User user, string password, string? otp)
+    public LoginResultCode TryLogin(User user, string password, string? otp)
     {
         // 基本檢查密碼是否有問題
         if (!BCrypt.Net.BCrypt.Verify(password, user.Password))

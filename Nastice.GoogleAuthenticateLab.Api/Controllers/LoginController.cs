@@ -13,11 +13,13 @@ public class LoginController : ControllerBase
 {
     private readonly ILogger<LoginController> _logger;
     private readonly IAuthService _authService;
+    private readonly IHostEnvironment _env;
 
-    public LoginController(ILogger<LoginController> logger, IAuthService authService)
+    public LoginController(ILogger<LoginController> logger, IAuthService authService, IHostEnvironment env)
     {
         _logger = logger;
         _authService = authService;
+        _env = env;
     }
 
     /// <summary>
@@ -42,7 +44,7 @@ public class LoginController : ControllerBase
             return Unauthorized(problemDetail);
         }
 
-        var isAuthorize = _authService.LoginAsync(user, request.Password!, request.Otp!);
+        var isAuthorize = _authService.TryLogin(user, request.Password!, request.Otp!);
         if (isAuthorize is not LoginResultCode.Success)
         {
             _logger.LogError(
@@ -61,25 +63,8 @@ public class LoginController : ControllerBase
 
         var loginResponse = _authService.CreateToken(user);
 
-        var jwtOptions = new CookieOptions
-        {
-            Expires = DateTime.Now.AddHours(1),
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            HttpOnly = true
-        };
-
-        Response.Cookies.Append("access_token", loginResponse.AccessToken!, jwtOptions);
-
-        var csrfOptions = new CookieOptions
-        {
-            Expires = DateTimeOffset.Now.AddHours(1),
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            HttpOnly = false
-        };
-
-        Response.Cookies.Append("csrf_token", Guid.NewGuid().ToString(), csrfOptions);
+        setJwtTokenCookie(loginResponse.AccessToken!);
+        setCsrfTokenCookie();
 
         return Ok(loginResponse);
     }
@@ -98,5 +83,33 @@ public class LoginController : ControllerBase
         problemDetails.Extensions.Add("errorCode", code.ToString());
 
         return problemDetails;
+    }
+
+    private void setJwtTokenCookie(string accessToken)
+    {
+        var jwtOptions = new CookieOptions
+        {
+            Domain = _env.IsDevelopment() ? "" : ".nastice.dev",
+            Expires = DateTime.Now.AddHours(1),
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            HttpOnly = true
+        };
+
+        Response.Cookies.Append("access_token", accessToken, jwtOptions);
+    }
+
+    private void setCsrfTokenCookie()
+    {
+        var csrfOptions = new CookieOptions
+        {
+            Domain = _env.IsDevelopment() ? "" : ".nastice.dev",
+            Expires = DateTimeOffset.Now.AddHours(1),
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            HttpOnly = false
+        };
+
+        Response.Cookies.Append("csrf_token", Guid.NewGuid().ToString(), csrfOptions);
     }
 }

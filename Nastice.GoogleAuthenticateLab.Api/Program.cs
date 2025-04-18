@@ -88,9 +88,19 @@ try
             {
                 ValidateIssuer = true,
                 ValidateLifetime = true,
+                ValidateAudience = false,
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = jwtOptions.Issuer,
                 IssuerSigningKeys = [key]
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context => {
+                    var token = context.Request.Cookies["access_token"];
+                    context.Token = token;
+                    return Task.CompletedTask;
+                }
             };
         });
 
@@ -186,6 +196,8 @@ try
     });
 
     app.UseHttpsRedirection();
+
+    app.UseAuthentication();
 
     app.UseAuthorization();
 
