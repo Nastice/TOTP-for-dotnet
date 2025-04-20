@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 
@@ -7,18 +8,18 @@ public record LoginRequest
     /// <summary>
     /// 帳號
     /// </summary>
-    [Display(Name = "帳號")]
-    public string? Account { get; set; }
+    [Description("帳號")]
+    public required string Account { get; set; }
 
     /// <summary>
     /// 密碼
     /// </summary>
-    [Display(Name = "密碼")]
-    public string? Password { get; set; }
+    [Description("密碼")]
+    public required string Password { get; set; }
 
     /// <summary>
-    ///
+    /// 一次性授權碼
     /// </summary>
-    [Display(Name = "授權碼")]
-    public string? Otp { get; set; }
+    [Description("OTP 驗證碼")]
+    public required string Otp { get; set; }
 }

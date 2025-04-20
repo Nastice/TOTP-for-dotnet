@@ -8,7 +8,7 @@ public class LoginRequestValidation : AbstractValidator<LoginRequest>
 {
     public LoginRequestValidation()
     {
-        RuleFor(x => x.Account).NotEmpty().WithDisplayName(x => x.Account);
-        RuleFor(x => x.Password).NotEmpty().WithDisplayName(x => x.Password);
+        RuleFor(x => x.Account).NotEmpty().WithDescription(x => x.Account);
+        RuleFor(x => x.Password).NotEmpty().WithDescription(x => x.Password);
     }
 }

@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Options;
-using Nastice.GoogleAuthenticateLab.Shared.Models.Responses;
 
 namespace Nastice.GoogleAuthenticateLab.Services.Libraries;
 
@@ -17,10 +16,10 @@ public class JwtTokenLibrary
         _jwtOptions = jwtOptions.Value;
     }
 
-    public LoginResponse CreateLoginResponse(IEnumerable<Claim> claims)
-    {
-        var response = new LoginResponse();
+    public JwtOptions GetJwtOptions() => _jwtOptions;
 
+    public string GenerateJwtToken(IEnumerable<Claim> claims)
+    {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret!));
         var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -33,12 +32,6 @@ public class JwtTokenLibrary
         );
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-        response.AccessToken = tokenString;
-        response.ExpiresIn = _jwtOptions.TokenLifetime;
-        response.TokenType = "Bearer";
-        response.ExpiresAt = DateTime.Now.AddMinutes(_jwtOptions.TokenLifetime);
-
-        return response;
+        return tokenString;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
+using Nastice.GoogleAuthenticateLab.Shared.Models;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Responses;
 
@@ -7,6 +8,13 @@ namespace Nastice.GoogleAuthenticateLab.Services.Interfaces;
 
 public interface IAuthService
 {
+    /// <summary>
+    /// 嘗試進行登入
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    public Task<LoginResult> TryLoginAsync(LoginRequest request);
+
     /// <summary>
     /// 透過帳號取得使用者
     /// </summary>
@@ -24,16 +32,9 @@ public interface IAuthService
     public LoginResultCode TryLogin(User user, string password, string? otp);
 
     /// <summary>
-    /// 生成登入回應
-    /// </summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
-    public LoginResponse CreateToken(User user);
-
-    /// <summary>
     /// 註冊使用者
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    public Task<User?> RegisterAsync(RegisterRequest request);
+    public Task<LoginResult> RegisterAsync(RegisterRequest request);
 }

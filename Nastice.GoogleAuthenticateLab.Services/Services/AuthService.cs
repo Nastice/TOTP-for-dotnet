@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
@@ -6,8 +7,8 @@ using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Services.Libraries;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
 using Nastice.GoogleAuthenticateLab.Shared.Exceptions;
+using Nastice.GoogleAuthenticateLab.Shared.Models;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
-using Nastice.GoogleAuthenticateLab.Shared.Models.Responses;
 using Nastice.GoogleAuthenticateLab.Shared.Resources;
 
 namespace Nastice.GoogleAuthenticateLab.Services.Services;
@@ -25,6 +26,25 @@ public class AuthService : IAuthService
         _jwtTokenLibrary = jwtTokenLibrary;
     }
 
+    public async Task<LoginResult> TryLoginAsync(LoginRequest request)
+    {
+        var user = await _userRepository.GetAsync(x => x.Account == request.Account);
+        if (user is null)
+        {
+            throw new CommonException("User not found.", StatusCodes.Status401Unauthorized);
+        }
+
+        var validationResult = TryLogin(user, request.Password, request.Otp);
+        if (validationResult != LoginResultCode.Success)
+        {
+            throw new CommonException(validationResult.ToString(), StatusCodes.Status401Unauthorized);
+        }
+
+        var loginResult = createLoginResult(user);
+
+        return loginResult;
+    }
+
     public async Task<User?> GetUserByAccountAsync(string account)
     {
         var user = await _userRepository.GetAsync(x => x.Account == account);
@@ -38,6 +58,13 @@ public class AuthService : IAuthService
         {
             _logger.LogWarning(LogMessages.Services.UserService.PasswordIncorrect, user.Account);
             return LoginResultCode.InvalidAccountOrPassword;
+        }
+
+        // 檢查帳號是否有啟用
+        if (!user.Enable)
+        {
+            _logger.LogWarning(LogMessages.Services.UserService.UserIsNotEnable, user.Account);
+            return LoginResultCode.NotEnable;
         }
 
         // 如果用戶有申請 TOTP 驗證碼則需要進行驗證
@@ -57,30 +84,10 @@ public class AuthService : IAuthService
             }
         }
 
-        // 檢查帳號是否有啟用
-        if (!user.Enable)
-        {
-            _logger.LogWarning(LogMessages.Services.UserService.UserIsNotEnable, user.Account);
-            return LoginResultCode.NotEnable;
-        }
-
         return LoginResultCode.Success;
     }
 
-    public LoginResponse CreateToken(User user)
-    {
-        var claims = new List<Claim>
-        {
-            new (ClaimTypes.Name, user.Account),
-            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new (ClaimTypes.Email, user.Email),
-            new ("IssuedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")),
-        };
-
-        return _jwtTokenLibrary.CreateLoginResponse(claims);
-    }
-
-    public async Task<User?> RegisterAsync(RegisterRequest request)
+    public async Task<LoginResult> RegisterAsync(RegisterRequest request)
     {
         var user = new User
         {
@@ -102,6 +109,40 @@ public class AuthService : IAuthService
             throw new CommonException("更新異常，請稍後再試。");
         }
 
-        return user;
+        var result = createLoginResult(user);
+
+        return result;
     }
+
+    #region Private Method
+
+    private LoginResult createLoginResult(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new (ClaimTypes.Name, user.Account),
+            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new (ClaimTypes.Email, user.Email),
+            new ("IssuedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
+        };
+
+        var accessToken = _jwtTokenLibrary.GenerateJwtToken(claims);
+        var csrfToken = Guid.NewGuid().ToString();
+        var refreshToken = Guid.NewGuid().ToString();
+        var jwtOptions = _jwtTokenLibrary.GetJwtOptions();
+
+        var loginResult = new LoginResult
+        {
+            AccessToken = accessToken,
+            CsrfToken = csrfToken,
+            RefreshToken = refreshToken,
+            RefreshTokenLifetime = jwtOptions.RefreshTokenLifetime,
+            ExpiresIn = jwtOptions.TokenLifetime,
+            ExpiredAt = DateTime.Now.AddMinutes(jwtOptions.TokenLifetime)
+        };
+
+        return loginResult;
+    }
+
+    #endregion
 }
