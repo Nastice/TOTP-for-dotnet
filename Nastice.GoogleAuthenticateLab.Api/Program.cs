@@ -47,6 +47,7 @@ try
     var jwtOptionsSection = builder.Configuration.GetSection("JwtOptions");
 
     builder.Services.Configure<JwtOptions>(jwtOptionsSection);
+    builder.Services.Configure<AesOptions>(builder.Configuration.GetSection("AesOptions"));
 
     #endregion
 
@@ -140,7 +141,8 @@ try
 
     #region Register Libraries
 
-    builder.Services.AddProxiedScoped<JwtTokenLibrary>();
+    builder.Services.AddProxiedScoped<JwtTokenLibrary>()
+        .AddProxiedScoped<AesSecurityLibrary>();
 
     #endregion
 
@@ -170,6 +172,16 @@ try
 
     #endregion
 
+    #region Register Cache Service
+
+    builder.Services.AddStackExchangeRedisCache(options => {
+        options.Configuration = builder.Configuration.GetConnectionString("RedisCache");
+        options.InstanceName = "Nastice:GoogleAuthenticateLab";
+    });
+    builder.Services.AddDistributedMemoryCache();
+
+    #endregion
+
     #region Register Fluent Validations
 
     ValidatorOptions.Global.LanguageManager = new ZhLanguageManager();
@@ -195,7 +207,10 @@ try
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
     });
 
-    app.UseHttpsRedirection();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
 
     app.UseAuthentication();
 

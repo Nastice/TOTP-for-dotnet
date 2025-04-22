@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
@@ -18,12 +19,20 @@ public class AuthService : IAuthService
     private readonly IRepositoryBase<User> _userRepository;
     private readonly ILogger<AuthService> _logger;
     private readonly JwtTokenLibrary _jwtTokenLibrary;
+    private readonly IDistributedCache _cache;
+    private readonly AesSecurityLibrary _aesSecurityLibrary;
 
-    public AuthService(IRepositoryBase<User> userRepository, ILogger<AuthService> logger, JwtTokenLibrary jwtTokenLibrary)
+    public AuthService(IRepositoryBase<User> userRepository,
+        ILogger<AuthService> logger,
+        JwtTokenLibrary jwtTokenLibrary,
+        IDistributedCache cache,
+        AesSecurityLibrary aesSecurityLibrary)
     {
         _userRepository = userRepository;
         _logger = logger;
         _jwtTokenLibrary = jwtTokenLibrary;
+        _cache = cache;
+        _aesSecurityLibrary = aesSecurityLibrary;
     }
 
     public async Task<LoginResult> TryLoginAsync(LoginRequest request)
@@ -41,6 +50,8 @@ public class AuthService : IAuthService
         }
 
         var loginResult = createLoginResult(user);
+
+        await cacheToken(user.Id, loginResult);
 
         return loginResult;
     }
@@ -91,10 +102,10 @@ public class AuthService : IAuthService
     {
         var user = new User
         {
-            Account = request.Account!,
-            Password = BCrypt.Net.BCrypt.HashPassword(request.Password!),
-            Name = request.Name!,
-            Email = request.Email!,
+            Account = request.Account,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Name = request.Name,
+            Email = request.Email,
             Enable = true,
             CreatedAt = DateTime.Now
         };
@@ -111,6 +122,8 @@ public class AuthService : IAuthService
 
         var result = createLoginResult(user);
 
+        await cacheToken(user.Id, result);
+
         return result;
     }
 
@@ -120,15 +133,17 @@ public class AuthService : IAuthService
     {
         var claims = new List<Claim>
         {
-            new (ClaimTypes.Name, user.Account),
-            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new (ClaimTypes.Email, user.Email),
-            new ("IssuedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
+            new(ClaimTypes.Name, user.Account),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Email, user.Email),
+            new("IssuedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
         };
 
         var accessToken = _jwtTokenLibrary.GenerateJwtToken(claims);
-        var csrfToken = Guid.NewGuid().ToString();
-        var refreshToken = Guid.NewGuid().ToString();
+        var csrfToken = Guid.NewGuid()
+            .ToString();
+        var refreshToken = Guid.NewGuid()
+            .ToString();
         var jwtOptions = _jwtTokenLibrary.GetJwtOptions();
 
         var loginResult = new LoginResult
@@ -138,10 +153,33 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             RefreshTokenLifetime = jwtOptions.RefreshTokenLifetime,
             ExpiresIn = jwtOptions.TokenLifetime,
-            ExpiredAt = DateTime.Now.AddMinutes(jwtOptions.TokenLifetime)
+            ExpiredAt = DateTime.Now.AddMinutes(jwtOptions.TokenLifetime),
+            User = new()
+            {
+                Name = user.Name,
+                Avatar = "",
+                Email = user.Email
+            }
         };
 
         return loginResult;
+    }
+
+    private async Task cacheToken(int userId, LoginResult loginInfo)
+    {
+        await _cache.SetStringAsync($"RefreshToken:{userId}",
+            _aesSecurityLibrary.Encrypt(loginInfo.RefreshToken),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpiration = DateTime.Now.AddMinutes(loginInfo.RefreshTokenLifetime)
+            });
+
+        await _cache.SetStringAsync($"CsrfToken:{userId}",
+            _aesSecurityLibrary.Encrypt(loginInfo.CsrfToken),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpiration = DateTime.Now.AddMinutes(loginInfo.ExpiresIn)
+            });
     }
 
     #endregion

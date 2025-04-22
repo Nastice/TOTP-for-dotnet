@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Shared.Models;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
@@ -15,11 +16,13 @@ public class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IHostEnvironment _env;
+    private readonly IDistributedCache _cache;
 
-    public AuthController(IAuthService authService, IHostEnvironment env)
+    public AuthController(IAuthService authService, IHostEnvironment env, IDistributedCache cache)
     {
         _authService = authService;
         _env = env;
+        _cache = cache;
     }
 
     /// <summary>
@@ -27,7 +30,7 @@ public class AuthController : ApiControllerBase
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    [HttpPost("Login", Name = "登入")]
+    [HttpPost("Login", Name = "Login")]
     [EndpointSummary("登入")]
     [EndpointDescription("依據帳號密碼進行登入，若使用者有申請 TOTP 功能則會要求提供 OTP 驗證碼")]
     [ProducesResponseType(typeof(ClientUserResponse), StatusCodes.Status200OK)]
@@ -45,7 +48,7 @@ public class AuthController : ApiControllerBase
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    [HttpPost("Register")]
+    [HttpPost("Register", Name="Register")]
     [EndpointSummary("註冊帳號")]
     [EndpointDescription("依據使用者的註冊資料寫入資料庫中。")]
     [ProducesResponseType(typeof(ClientUserResponse), StatusCodes.Status200OK)]
@@ -139,12 +142,16 @@ public class AuthController : ApiControllerBase
     {
         var cookieOptions = new CookieOptions
         {
-            Domain = _env.IsDevelopment() ? "" : ".nastice.dev",
             Expires = DateTime.Now.AddMinutes(expiresIn),
             Secure = true,
-            SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+            SameSite = _env.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Lax,
             HttpOnly = httpOnly
         };
+
+        if (!_env.IsDevelopment())
+        {
+            cookieOptions.Domain = ".nastice.dev";
+        }
 
         return cookieOptions;
     }
