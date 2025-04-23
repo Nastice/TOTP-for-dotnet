@@ -1,8 +1,10 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
+using Nastice.GoogleAuthenticateLab.Shared;
 using Nastice.GoogleAuthenticateLab.Shared.Models;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Responses;
@@ -16,13 +18,11 @@ public class AuthController : ApiControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IHostEnvironment _env;
-    private readonly IDistributedCache _cache;
 
-    public AuthController(IAuthService authService, IHostEnvironment env, IDistributedCache cache)
+    public AuthController(IAuthService authService, IHostEnvironment env)
     {
         _authService = authService;
         _env = env;
-        _cache = cache;
     }
 
     /// <summary>
@@ -66,7 +66,8 @@ public class AuthController : ApiControllerBase
     /// </summary>
     /// <returns></returns>
     [Authorize]
-    [HttpGet("Me", Name = "Get Profile")]
+    [HttpPost("Me", Name = "Get Profile")]
+    [RequireCsrfToken]
     [EndpointSummary("取得個人資料")]
     [EndpointDescription("透過 Cookie 中的 access_token，取得使用者個人資料。")]
     [ProducesResponseType(typeof(ClientUserResponse), StatusCodes.Status200OK)]

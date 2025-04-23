@@ -6,6 +6,7 @@ using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Services.Libraries;
+using Nastice.GoogleAuthenticateLab.Shared.Constants;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
 using Nastice.GoogleAuthenticateLab.Shared.Exceptions;
 using Nastice.GoogleAuthenticateLab.Shared.Models;
@@ -167,14 +168,14 @@ public class AuthService : IAuthService
 
     private async Task cacheToken(int userId, LoginResult loginInfo)
     {
-        await _cache.SetStringAsync($"RefreshToken:{userId}",
+        await _cache.SetStringAsync($"{RedisKeys.RefreshToken}:{userId}",
             _aesSecurityLibrary.Encrypt(loginInfo.RefreshToken),
             new DistributedCacheEntryOptions
             {
                 AbsoluteExpiration = DateTime.Now.AddMinutes(loginInfo.RefreshTokenLifetime)
             });
 
-        await _cache.SetStringAsync($"CsrfToken:{userId}",
+        await _cache.SetStringAsync($"{RedisKeys.CsrfToken}:{userId}",
             _aesSecurityLibrary.Encrypt(loginInfo.CsrfToken),
             new DistributedCacheEntryOptions
             {

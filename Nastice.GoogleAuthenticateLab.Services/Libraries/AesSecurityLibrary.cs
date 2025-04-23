@@ -1,12 +1,13 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Options;
+using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Shared.Extensions;
 using Nastice.GoogleAuthenticateLab.Shared.Helpers;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Options;
 
 namespace Nastice.GoogleAuthenticateLab.Services.Libraries;
 
-public class AesSecurityLibrary
+public class AesSecurityLibrary : ISecurityLibrary
 {
     private readonly AesOptions _options;
 

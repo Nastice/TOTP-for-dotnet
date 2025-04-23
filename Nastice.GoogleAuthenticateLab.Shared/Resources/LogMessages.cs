@@ -4,6 +4,18 @@ public static class LogMessages
 {
     public static class Api
     {
+        public static class Middlewares
+        {
+            public static class CsrfValidationMiddleware
+            {
+                public const string NoControllerActionDescriptorFound = "Endpoint does not have ControllerActionDescriptor";
+
+                public const string NoRequireAntiforgeryTokenAttribute = "Method or Controller does not have RequireAntiforgeryTokenAttribute";
+                public const string RequireValidateCsrfToken = "Is {ClassName}@{Method} requires validate csrf-token? {Result}.";
+                public const string CsrfTokenVerifyFailed = "Csrf token verify failed by {Reason}.";
+            }
+        }
+
         public static class Controllers
         {
             public static class LoginController

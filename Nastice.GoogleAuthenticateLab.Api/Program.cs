@@ -14,6 +14,7 @@ using Nastice.GoogleAuthenticateLab.Data.Interfaces;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DAOs;
 using Nastice.GoogleAuthenticateLab.Data.Nastice.GoogleAuthenticateLab.Data.DTOs;
 using Nastice.GoogleAuthenticateLab.Data.Repositories;
+using Nastice.GoogleAuthenticateLab.Middlewares;
 using Nastice.GoogleAuthenticateLab.Services.Interfaces;
 using Nastice.GoogleAuthenticateLab.Services.Libraries;
 using Nastice.GoogleAuthenticateLab.Services.Services;
@@ -142,6 +143,7 @@ try
     #region Register Libraries
 
     builder.Services.AddProxiedScoped<JwtTokenLibrary>()
+        .AddProxiedKeyedScoped<ISecurityLibrary, AesSecurityLibrary>(nameof(AesSecurityLibrary))
         .AddProxiedScoped<AesSecurityLibrary>();
 
     #endregion
@@ -176,7 +178,7 @@ try
 
     builder.Services.AddStackExchangeRedisCache(options => {
         options.Configuration = builder.Configuration.GetConnectionString("RedisCache");
-        options.InstanceName = "Nastice:GoogleAuthenticateLab";
+        options.InstanceName = "Nastice:GoogleAuthenticateLab:";
     });
     builder.Services.AddDistributedMemoryCache();
 
@@ -219,6 +221,8 @@ try
     app.MapControllers();
 
     app.UseCors("DefaultCorsPolicy");
+
+    app.UseMiddleware<CsrfValidationMiddleware>();
 
     await app.RunAsync();
 
