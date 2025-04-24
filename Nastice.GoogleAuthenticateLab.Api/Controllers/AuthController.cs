@@ -35,7 +35,8 @@ public class AuthController : ApiControllerBase
     [EndpointDescription("依據帳號密碼進行登入，若使用者有申請 TOTP 功能則會要求提供 OTP 驗證碼")]
     [ProducesResponseType(typeof(ClientUserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var loginResult = await _authService.TryLoginAsync(request);
