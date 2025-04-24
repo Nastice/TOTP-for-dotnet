@@ -9,6 +9,7 @@ using Nastice.GoogleAuthenticateLab.Services.Libraries;
 using Nastice.GoogleAuthenticateLab.Shared.Constants;
 using Nastice.GoogleAuthenticateLab.Shared.Enums;
 using Nastice.GoogleAuthenticateLab.Shared.Exceptions;
+using Nastice.GoogleAuthenticateLab.Shared.Extensions;
 using Nastice.GoogleAuthenticateLab.Shared.Models;
 using Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 using Nastice.GoogleAuthenticateLab.Shared.Resources;
@@ -41,13 +42,13 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetAsync(x => x.Account == request.Account);
         if (user is null)
         {
-            throw new CommonException("User not found.", StatusCodes.Status401Unauthorized);
+            throw new CommonException(LoginResultCode.InvalidAccountOrPassword.GetDisplayName(), StatusCodes.Status401Unauthorized);
         }
 
         var validationResult = TryLogin(user, request.Password, request.Otp);
         if (validationResult != LoginResultCode.Success)
         {
-            throw new CommonException(validationResult.ToString(), StatusCodes.Status401Unauthorized);
+            throw new CommonException(validationResult.GetDisplayName(), StatusCodes.Status401Unauthorized);
         }
 
         var loginResult = createLoginResult(user);
