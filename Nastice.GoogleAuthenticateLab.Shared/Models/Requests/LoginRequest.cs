@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Models.Requests;
 
@@ -21,5 +20,5 @@ public record LoginRequest
     /// 一次性授權碼
     /// </summary>
     [Description("OTP 驗證碼")]
-    public required string Otp { get; set; }
+    public string? Otp { get; set; }
 }
