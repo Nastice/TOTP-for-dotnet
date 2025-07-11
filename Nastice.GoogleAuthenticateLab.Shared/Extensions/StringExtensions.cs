@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using QRCoder;
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Extensions;
 
@@ -27,5 +28,13 @@ public static class StringExtensions
 
         var newByte = byte.Parse(hex, NumberStyles.HexNumber);
         return newByte;
+    }
+
+    public static string ToQrcode(this string obj)
+    {
+        var imageBytes = PngByteQRCodeHelper.GetQRCode(obj, QRCodeGenerator.ECCLevel.L, 6);
+
+        var imageString = Convert.ToBase64String(imageBytes);
+        return imageString;
     }
 }

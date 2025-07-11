@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nastice.GoogleAuthenticateLab.Shared.Helpers;
+using QRCoder;
 
 namespace Nastice.GoogleAuthenticateLab.Shared.Extensions;
 

@@ -28,10 +28,9 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration)
-    .Destructure.ToMaximumDepth(2);
-
-Log.Logger = logger.CreateLogger();
+Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration)
+    .Destructure.ToMaximumDepth(2)
+    .CreateLogger();
 
 try
 {
@@ -49,6 +48,7 @@ try
 
     builder.Services.Configure<JwtOptions>(jwtOptionsSection);
     builder.Services.Configure<AesOptions>(builder.Configuration.GetSection("AesOptions"));
+    builder.Services.Configure<TotpOptions>(builder.Configuration.GetSection("TotpOptions"));
 
     #endregion
 
@@ -136,7 +136,9 @@ try
 
     #region Register Services
 
-    builder.Services.AddProxiedScoped<IAuthService, AuthService>();
+    builder.Services.AddProxiedScoped<IAuthService, AuthService>()
+        .AddProxiedScoped<IUserService, UserService>()
+        .AddProxiedScoped<ITotpService, TotpService>();
 
     #endregion
 

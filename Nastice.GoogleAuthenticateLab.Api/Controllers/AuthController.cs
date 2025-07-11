@@ -100,6 +100,15 @@ public class AuthController : ApiControllerBase
         return Ok(response);
     }
 
+    [HttpPost("Logout", Name = "Logout")]
+    [EndpointSummary("登出")]
+    [EndpointDescription("將使用者登出，清除相關 cookie")]
+    public IActionResult Logout()
+    {
+        removeAllCookies();
+        return Ok();
+    }
+
     #region Private Methods
 
     private void setTokenCookie(LoginResult loginInfo)
@@ -107,6 +116,16 @@ public class AuthController : ApiControllerBase
         setJwtTokenCookie(loginInfo);
         setRefreshTokenCookie(loginInfo);
         setCsrfTokenCookie(loginInfo);
+    }
+
+    private void removeAllCookies()
+    {
+        var jwtOptions = createCookieOptions(-1);
+        var csrfOptions = createCookieOptions(-1, false);
+
+        Response.Cookies.Append("access_token", "", jwtOptions);
+        Response.Cookies.Append("refresh_token", "", jwtOptions);
+        Response.Cookies.Append("csrf_token", "", csrfOptions);
     }
 
     /// <summary>
